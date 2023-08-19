@@ -1,46 +1,96 @@
 const { response } = require('express');
-const { validationResult } = require('express-validator')
+const User = require('../models/Users')
+const bcrypt = require('bcryptjs')
+const { generateJWT } = require('../helpers/generateJWT')
 
-const registerUser = (req, res = response) => {
-    const { name, email, password } = req.body;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({
-            ok: false,
-            errors: errors.mapped()
-        })
-    }
-
-    res.status(201).json({
-        ok: true,
-        msg: 'New usser!!',
-        name,
-        email,
-        password
-    })
-}
-
-const loginUser = (req, res = response) => {
+const registerUser = async (req, res = response) => {
     const { email, password } = req.body;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({
+    try {
+        let user = await User.findOne({ email })
+
+        if (user) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'User already exists'
+            })
+        }
+        user = new User(req.body)
+
+        // encrypt password
+        const salt = bcrypt.genSaltSync()
+        user.password = bcrypt.hashSync(password, salt)
+
+        await user.save()
+
+        const token = await generateJWT(user.id, user.name)
+
+        res.status(201).json({
+            ok: true,
+            uid: user.id,
+            name: user.name,
+            token
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
             ok: false,
-            errors: errors.mapped()
+            msg: 'Ups, something went wrong. Please contact the administrator'
         })
     }
-    res.status(201).json({
-        ok: true,
-        msg: 'Login!!',
-        email,
-        password
-    })
+
 }
 
-const renewToken = (req, res = response) => {
+const loginUser = async (req, res = response) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'User dont exists'
+            })
+        }
+        // confirm password
+        const validPassword = bcrypt.compareSync(password, user.password)
+        if (!validPassword) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Invalid password'
+            })
+        }
+
+        const token = await generateJWT(user.id, user.name)
+
+        res.status(201).json({
+            ok: true,
+            uid: user.id,
+            name: user.name,
+            token
+        })
+
+
+    } catch (error) {
+        console.log(error)
+        console.log(error)
+        res.status(500).json({
+            ok: false,
+            msg: 'Ups, something went wrong. Please contact the administrator'
+        })
+    }
+}
+
+const renewToken = async (req, res = response) => {
+
+    const uid = req.uid;
+    const name = req.name;
+
+    // generar nuevo JWT
+    const token = await generateJWT(uid, name)
+
     res.json({
         ok: true,
-        msg: 'Renew!!'
+        token
     })
 }
 
