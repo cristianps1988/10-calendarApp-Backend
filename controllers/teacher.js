@@ -3,9 +3,17 @@ const Teacher = require('../models/Teacher');
 
 const getTeachers = async (req, res = response) => {
     const teachers = await Teacher.find().populate('user', 'name')
+    let myTeachers = []
+    teachers.forEach(event => {
+        const isMyTeacher = event.user.name === req.name
+        if (isMyTeacher) {
+            myTeachers.push(event)
+        }
+    });
+
     res.json({
         ok: true,
-        teachers,
+        teachers: myTeachers
     })
 }
 const createTeacher = async (req, res = response) => {
@@ -24,11 +32,6 @@ const createTeacher = async (req, res = response) => {
             msg: 'Contact the administrator'
         })
     }
-
-    // res.json({
-    //     ok: true,
-    //     msg: 'createTeacher'
-    // })
 }
 
 const updateTeacher = async (req, res = response) => {

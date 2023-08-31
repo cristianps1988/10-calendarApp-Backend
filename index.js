@@ -24,6 +24,8 @@ app.use(express.json())
 // rutas
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/events', require('./routes/events'))
+app.use('/api/course', require('./routes/course'))
+app.use('/api/group', require('./routes/group'))
 app.use('/api/teacher', require('./routes/teacher'))
 
 // escuchar peticiones

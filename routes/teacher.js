@@ -1,5 +1,5 @@
-// Ruta de info
-// host + /api/info
+// Ruta de teachers
+// host + /api/teacher
 
 const { Router } = require('express')
 const { getTeachers, createTeacher, updateTeacher, deleteTeacher, } = require('../controllers/teacher')
